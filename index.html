@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>MapView</title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      .esri-editor .esri-item-list__scroller {
+        max-height: 350px;
+      }
+    </style>
+
+    <script>
+      var esriConfig = {
+        locale: "fr"
+      };
+    </script>
+
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.18/esri/themes/light/main.css"
+    />
+    <script src="https://jsdev.arcgis.com/4.18/"></script>
+
+    <script>
+      require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/intl",
+        "esri/widgets/Editor"
+      ], function (WebMap, MapView, intl, Editor) {
+        // wrapped in async to use await
+        (async () => {
+          // Initially, the locale is set to French within the DojoConfig above but is changed to English below just did it to confirm all was working as expected
+
+          let currentLocale = intl.getLocale();
+          console.log("current locale is: ", currentLocale);
+
+          let bundle;
+
+          // Now after setting it to French, update it to personal English message strings
+
+          // First I need to create a message bundle loader
+          // Now take the message bundle loader and register it
+          intl.registerMessageBundleLoader({
+            pattern: "esri/widgets/",
+            async fetchMessageBundle(bundleId, locale) {
+              const [, filename] = bundleId.split("/t9n/");
+
+              const bundlePath = `./assets/bundles/t9n/${filename}_${locale}.json`;
+              const response = await fetch(bundlePath);
+              return response.json();
+            }
+          });
+
+          let webmap = new WebMap({
+            portalItem: {
+              id: "6c5d657f1cb04a5eb78a450e3c699c2a"
+            }
+          });
+
+          let view = new MapView({
+            container: "viewDiv",
+            map: webmap
+          });
+
+          await view.when();
+
+          view.popup.autoOpenEnabled = false; //disable popups
+
+          // Create the Editor
+          let editor = new Editor({
+            view: view,
+            messages: bundle
+          });
+
+          window.editor = editor;
+
+          await editor.when();
+
+          console.log(editor.messages);
+
+          // Add widget to top-right of the view
+          view.ui.add(editor, "top-right");
+
+          // change to different locale
+          setTimeout(() => intl.setLocale("en"), 2500);
+        })();
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv">
+      <div id="editorDiv"></div>
+    </div>
+  </body>
+</html>
